@@ -9,6 +9,12 @@ export interface CustomElementMetadata {
   style?: string;
 }
 
+export interface ListenerMetadata {
+  eventName: string;
+  handler: Function;
+  selector?: string;
+}
+
 export interface KeyValue {
   [key: string ]: any;
 }
@@ -23,6 +29,8 @@ export const CustomElement = (args: CustomElementMetadata) => {
       protected static props: KeyValue = {};
       protected static propsInit: KeyValue = {};
 
+      protected props: KeyValue = {};
+     
       protected static watchAttributes: KeyValue;
       protected static listeners: ListenerMetadata[];
 
@@ -54,7 +62,6 @@ export const CustomElement = (args: CustomElementMetadata) => {
         this.__connected = true;
 
         addEventListeners(this);
-        initializeProps(this);
       }
 
       __render() {
