@@ -113,34 +113,75 @@ describe('decorators basic', () => {
 
 @CustomElement({
   tag: 'btn-listen-dispatch',
-  template: `<button></button>`
+  template: `<button>Test</button>`
 })
 export class ButtonElement extends HTMLElement {
 
   @Dispatch() btnClick: DispatchEmitter;
+  @Dispatch('btn.namedClick') btnClickNamed: DispatchEmitter;
 
   constructor() {
     super();
   }
-  
+
   @Listen('click')
   btnHandler(){
     this.shadowRoot.querySelector('button').innerHTML = 'Hello';
+    this.btnClick.emit({detail: 'Hello'});
+    this.btnClickNamed.emit({detail: 'Hello from named click'});
   }
+
+  @Listen('click', 'button')
+  btnInnerClick() {}
 
 }
 
-describe('Event Listen.', () => {
+describe('event listen', () => {
   let element: any;
 
   beforeEach(() => {
-    const BtnElement = document.createElement('btn-listen-dispatch');
-    element = document.body.appendChild(BtnElement);
+    const btnElement = document.createElement('btn-listen-dispatch');
+    element = document.body.appendChild(btnElement);
   });
 
   it('should call method decorated @Listen', () => {
+    const btnHandlerSpy = spyOn(element.btnHandler,'call');
+    element.click();
+    expect(btnHandlerSpy).toHaveBeenCalled();
+  });
+
+  it('should trigger a btn.click DispatchEmitter', (done) => {
+    element.addEventListener('btn.click', (e) => {
+      expect(e.detail).toBe('Hello');
+      done();
+    });
+    element.click();
+  });
+
+  it('should trigger a btn.namedClick DispatchEmitter', (done) => {
+    element.addEventListener('btn.namedClick', (e) => {
+      expect(e.detail).toBe('Hello from named click');
+      done();
+    });
+    element.click();
+  });
+
+
+  it('should call method decorated @Listen on children element click', () => {
+    const btnHandlerSpy = spyOn(element.btnHandler,'call');
+    element.shadowRoot.querySelector('button').click();
+    expect(btnHandlerSpy).toHaveBeenCalled();
+  });
+
+  it('should call method decorated @Listen on selector click', () => {
+    const btnInnerSpy = spyOn(element.btnInnerClick,'call');
+    element.shadowRoot.querySelector('button').click();
+    expect(btnInnerSpy).toHaveBeenCalled();
+  });
+
+  it('should execute inner method decorated @Listen', () => {
     element.click();
     expect(element.shadowRoot.querySelector('button').innerHTML).toEqual('Hello');
-  })
+  });
 
 });

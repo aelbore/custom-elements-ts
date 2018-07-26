@@ -20,7 +20,6 @@ export const CustomElement = (args: CustomElementMetadata) => {
       private __connected: boolean = false;
 
       protected props: KeyValue = {};
-     
       protected static watchAttributes: KeyValue;
       protected static listeners: ListenerMetadata[];
 
