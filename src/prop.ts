@@ -1,29 +1,45 @@
 export const Prop = (): any => {
   return (target: any, propName: any) => {
+    const toKebabCase = str => {
+      return str
+        .replace(/([a-z])([A-Z])/g, '$1-$2')
+        .replace(/[\s_]+/g, '-')
+        .toLowerCase();
+    };
+    const attrName = toKebabCase(propName);
     function get() {
-      const getAttribute = (propName) => {
-        if(this.hasAttribute(propName)){
-          const attrValue = this.getAttribute(propName);
-          return attrValue == '' ? true : attrValue;
-        }
-        return false;
-      };
-      if (!this.props) {
-        this.props = {};
-      }
-      return this.props[propName] || getAttribute(propName);
+      return this.getAttribute(propName);
     }
     function set(value: any) {
       const oldValue = this[propName];
-      this.props[propName] = value;
       if(this.__connected){
         if(typeof value != 'object'){
-          this.setAttribute(propName, value);
+          this.setAttribute(attrName, value);
         } else {
-          this.attributeChangedCallback(propName, oldValue, value);
+          this.attributeChangedCallback(attrName, oldValue, value);
         }
+      } else {
+        this.constructor.propsInit[propName] = value;
       }
     }
     Object.defineProperty(target, propName, { get, set });
   };
+};
+
+export const initializeProps = (target: any) => {
+  const watchAttributes = target.constructor.watchAttributes;
+  if(watchAttributes) {
+    for(let name of Object.keys(watchAttributes)){
+      const attribValue = target.constructor.props[name] || target.getAttribute(name);
+      target[watchAttributes[name]]({new: attribValue});
+    }
+  }
+  const propsInit = target.constructor.propsInit;
+  if(propsInit) {
+    for(let name of Object.keys(propsInit)){
+      if(!target.hasAttribute(name)){
+        target[name] = propsInit[name];
+      }
+    }
+  }
 };
