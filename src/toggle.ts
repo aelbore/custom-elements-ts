@@ -1,3 +1,5 @@
+import { toKebabCase } from './util';
+
 export const Toggle = (): any => {
   return (target: any, propName: any) => {
     function get() {
@@ -32,8 +34,8 @@ export const Toggle = (): any => {
           throw(`TypeError: Cannot set boolean toggle property '${propName}' to '${value}'`);
         }
       }
-      this.constructor.props[propName] = value || false;
       if(this.__connected){
+        this.props[propName] = value || false;
         if(oldValue !== '' && oldValue !== null){
           this.setAttribute(propName, value);
         } else {
@@ -44,9 +46,15 @@ export const Toggle = (): any => {
           }
         }
       } else {
-        this.constructor.propsInit[propName] = value || false;
+        if (!this.hasAttribute(toKebabCase(propName))) {
+          this.constructor.propsInit[propName] = value;
+        }
       }
     }
+    if (!target.constructor.propsInit) {
+      target.constructor.propsInit = {};
+    }
+    target.constructor.propsInit[propName] = null;
     Object.defineProperty(target, propName, { get, set });
   };
 };

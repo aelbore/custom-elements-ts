@@ -1,5 +1,6 @@
 import { addEventListeners, ListenerMetadata } from './listen';
 import { initializeProps } from './prop';
+import { toKebabCase, toCamelCase } from './util';
 
 export interface CustomElementMetadata {
   tag?: string;
@@ -7,12 +8,7 @@ export interface CustomElementMetadata {
   templateUrl?: string;
   styleUrl?: string;
   style?: string;
-}
-
-export interface ListenerMetadata {
-  eventName: string;
-  handler: Function;
-  selector?: string;
+  shadow?: boolean;
 }
 
 export interface KeyValue {
@@ -21,40 +17,48 @@ export interface KeyValue {
 
 export const CustomElement = (args: CustomElementMetadata) => {
   return (target: any) => {
-    const toKebabCase = string => string.replace(/([a-z])([A-Z])/g, '$1-$2').replace(/\s+/g, '-').toLowerCase();
     const tag: string = args.tag || toKebabCase(target.prototype.constructor.name);
     const customElement: any = class extends (target as { new (): any }) {
       protected static __connected: boolean = false;
 
-      protected static props: KeyValue = {};
-      protected static propsInit: KeyValue = {};
+      props: KeyValue = {};
+      protected static propsInit: KeyValue;
 
-      protected props: KeyValue = {};
-     
       protected static watchAttributes: KeyValue;
       protected static listeners: ListenerMetadata[];
 
+      showShadowRoot: boolean;
+
       static get observedAttributes() {
-        return Object.keys(this.watchAttributes || {});
+        return  Object.keys(this.propsInit || {}).map(x => toKebabCase(x));
       }
 
       constructor() {
         super();
-        if(!this.shadowRoot){
+        this.showShadowRoot = args.shadow == null ? true : args.shadow;
+        if(!this.shadowRoot && this.showShadowRoot){
           this.attachShadow({ mode: 'open' });
         }
       }
 
       attributeChangedCallback(name: string, oldValue: string, newValue: string): void {
-        const watchAttributes: KeyValue = (this.constructor as any).watchAttributes;
-        if (watchAttributes && watchAttributes[name] && oldValue != newValue) {
-          const methodToCall: string = watchAttributes[name];
-          if(this.__connected){
-            this[methodToCall]({old: oldValue, new: newValue});
+        this.onAttributeChange(name, oldValue, newValue);
+      }
+
+      onAttributeChange(name: string, oldValue: string, newValue: string, set: boolean = true) {
+        if (oldValue != newValue) {
+          if(set) { this[toCamelCase(name)] = newValue; }
+          const watchAttributes: KeyValue = (this.constructor as any).watchAttributes;
+          if (watchAttributes && watchAttributes[name]) {
+            const methodToCall: string = watchAttributes[name];
+            if(this.__connected){
+              if(typeof this[methodToCall] == 'function'){
+                this[methodToCall]({old: oldValue, new: newValue});
+              }
+            }
           }
-          this[name] = newValue;
         }
-      } 
+      }
 
       connectedCallback() {
         this.__render();
@@ -62,16 +66,15 @@ export const CustomElement = (args: CustomElementMetadata) => {
         this.__connected = true;
 
         addEventListeners(this);
+        initializeProps(this);
       }
 
       __render() {
         if(this.__connected) return;
         const template = document.createElement('template');
-        template.innerHTML = `
-          <style>${args.style ? args.style : ''}</style>
-          ${args.template ? args.template : ''}`;
-
-          this.shadowRoot.appendChild(document.importNode(template.content, true));
+        const style = `${args.style ? `<style>${args.style}</style>` : ''}`;
+        template.innerHTML = `${style}${args.template ? args.template : ''}`;
+        (this.showShadowRoot ? this.shadowRoot : this).appendChild(document.importNode(template.content, true));
       }
     };
 

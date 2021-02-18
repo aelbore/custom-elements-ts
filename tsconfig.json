@@ -3,14 +3,21 @@
     "allowSyntheticDefaultImports": true,
     "allowUnreachableCode": false,
     "baseUrl": ".",
+<<<<<<< HEAD
     "declaration": true,
+=======
+>>>>>>> upstream/master
     "emitDecoratorMetadata": true,
     "experimentalDecorators": true,
     "importHelpers": true,
     "lib": ["es5", "es6", "dom"],
     "module": "es2015",
     "moduleResolution": "node",
+<<<<<<< HEAD
     "noUnusedLocals": true,
+=======
+    "noUnusedLocals": false,
+>>>>>>> upstream/master
     "noUnusedParameters": true,
     "outDir": "dist",
     "paths": {
@@ -19,7 +26,11 @@
     "removeComments": true,
     "rootDir": "src",
     "sourceMap": true,
+<<<<<<< HEAD
     "target": "es5"
+=======
+    "target": "es6"
+>>>>>>> upstream/master
   },
   "include": [
     ".tmp/**/*",

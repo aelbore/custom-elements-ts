@@ -1,15 +1,10 @@
-import { CustomElement, Toggle } from 'custom-elements-ts';
+import { CustomElement, Toggle, Watch } from 'custom-elements-ts';
 
 @CustomElement({})
-export class ToggleElement extends HTMLElement {
+class ToggleElement extends HTMLElement {
 
   @Toggle() disabled;
 
-  constructor(){
-    super();
-  }
-
-  connectedCallback() {}
 }
 
 describe('toggle decorator', () => {
@@ -18,6 +13,10 @@ describe('toggle decorator', () => {
   beforeEach(() => {
     const myElement = document.createElement('toggle-element');
     myElementInstance = document.body.appendChild(myElement);
+  });
+
+  afterEach(() => {
+    document.body.innerHTML = '';
   });
 
   it('should return false on no attribute set', () => {
@@ -68,8 +67,11 @@ describe('toggle decorator', () => {
   });
 
   it('should reflect random string prop to attribute as false', () => {
+    const warn = console.warn;
+    console.warn = () => {};
     myElementInstance.disabled = 'asd';
     expect(myElementInstance.getAttribute('disabled')).toBe('false');
+    console.warn = warn;
   });
 
 });

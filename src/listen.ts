@@ -1,3 +1,4 @@
+import { toDotCase } from './util';
 interface ListenerMetadata {
   eventName: string;
   handler: Function;
@@ -5,7 +6,8 @@ interface ListenerMetadata {
 }
 
 interface CustomEventOptions {
-  bubbles?: true;
+  bubbles?: boolean;
+  composed?: boolean;
   detail?: any;
 }
 
@@ -19,16 +21,39 @@ const Listen = (eventName: string, selector?: string) => {
       target.constructor.listeners = [];
     }
     target.constructor.listeners.push({ selector: selector, eventName: eventName, handler: target[methodName] });
-  }
-}
+  };
+};
 
-export const addEventListeners = (target: any) => {
+const addEventListeners = (target: any) => {
   if (target.constructor.listeners) {
+    const targetRoot: any = target.shadowRoot || target;
     for (const listener of target.constructor.listeners as Array<ListenerMetadata>) {
-      const eventTarget = (listener.selector) ? target.shadowRoot.querySelector(listener.selector): target;
-      eventTarget.addEventListener(listener.eventName, function(e: CustomEvent){
-        listener.handler.call(target, e);
-      });
+      const eventTarget = (listener.selector)
+        ? targetRoot.querySelector(listener.selector)
+          ? targetRoot.querySelector(listener.selector): null
+        : target;
+      if (eventTarget) {
+        eventTarget.addEventListener(listener.eventName, (e: CustomEvent) => {
+          listener.handler.call(target, e);
+        });
+      }
     }
   }
-}
+};
+
+const Dispatch = (eventName?: string) =>{
+  return (target: HTMLElement, propertyName: string) => {
+    function get(){
+      const self: EventTarget = this as EventTarget;
+      return {
+        emit(options?: CustomEventOptions) {
+          const evtName = (eventName) ? eventName: toDotCase(propertyName);
+          self.dispatchEvent(new CustomEvent(evtName, options));
+        }
+      };
+    }
+    Object.defineProperty(target, propertyName, { get });
+  };
+};
+
+export { Listen,  addEventListeners, DispatchEmitter, Dispatch, CustomEventOptions, ListenerMetadata };

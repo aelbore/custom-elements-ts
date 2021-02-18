@@ -4,7 +4,7 @@ import { CustomElement, Dispatch, DispatchEmitter, Listen } from 'custom-element
   tag: 'btn-dispatch',
   template: `<button>Test</button>`
 })
-export class DispatchElement extends HTMLElement {
+class DispatchElement extends HTMLElement {
 
   @Dispatch() btnClick: DispatchEmitter;
   @Dispatch('btn.namedClick') btnClickNamed: DispatchEmitter;
@@ -28,6 +28,10 @@ describe('dispatch decorators', () => {
   beforeEach(() => {
     const btnElement = document.createElement('btn-dispatch');
     element = document.body.appendChild(btnElement);
+  });
+
+  afterEach(() => {
+    document.body.innerHTML = '';
   });
 
   it('should trigger a btn.click DispatchEmitter', (done) => {
